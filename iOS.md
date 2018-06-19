@@ -161,12 +161,49 @@ typedef struct category_t {
 
 3)显示调用will/didChangeValueForKey:方法。
 
-
+```
+[self willChangeValueForKey:@"isExecuting"];
+ _isExecuting = YES;
+[self didChangeValueForKey:@"isExecuting"];
+```
 
 #MVVM、MVP、MVC的区别
 - MVC(Model-View-Controller)
+  
+ ![image](http://cc.cocimg.com/api/uploads/20170710/1499668090565523.png)
+   
 - MVVM(Model-View-ViewModel)
+
+
+ ![](https://cdn-images-1.medium.com/max/1600/1*D4zpAC_ojOm21sL9q197ZQ.png)
+  
+  - ViewController和Model分离
+  - ViewModel承担原来ViewController的主要职责:持有Model，负责大部分的App逻辑：绑定数据，获取数据，更新数据
+  - ViewController必须通过ViewModel访问Model
+  - ViewController目前负责用户交互，显示数据和动画等，视同View
+  - View持有ViewModel的引用，反之没有
+  - ViewModel持有Model的引用，反之没有
+  - MVVM方便测试
+  - Model变化->ViewModel属性变化->View更新
+ 
+ ![image](http://cc.cocimg.com/api/uploads/20170710/1499668291203817.png)
+ ![image](http://cc.cocimg.com/api/uploads/20170710/1499668392288990.png)
+ ![image](http://cc.cocimg.com/api/uploads/20170710/1499668424844815.png)
+ 
+ - MVVM without Databinding with Data Controller
+ ![image](http://gracelancy.com/assets/post/arch0.png)
+
+
 - MVP(Model-View-Presenter)
+
+#MVVM优点和缺点
+- 优点
+  - 
+- 缺点
+  - 学习成本高
+  - 数据绑定需要增加KVO代码或引入ReactiveCocoa
+  - 数据绑定使得Debug更加困难了
+  - ViewModel仍然承载了大量的逻辑:业务逻辑，界面逻辑，数据存储，网络
 
 #第三方框架
 - AFNetworking 原理
@@ -211,6 +248,9 @@ typedef struct category_t {
 
 - 异步 asynchronization
 
+就是允许在执行某一个任务时，函数立刻返回，但是真正要执行的任务稍后完成。
+异步方法并不一定永远在新线程里面执行，反之亦然。
+
 > 在新的线程中执行任务，具备开启新线程的能力
 > 
 > `dispatch_async`
@@ -229,18 +269,24 @@ typedef struct category_t {
   - `dispatch_queue_create `
   - `dispatch_get_main_queue ` 主线程相关联的串行队列
 
-- 并行 concurrency
+- 并行 concurrency 同时执行
+
+并发指的是一种现象，一种经常出现，无可避免的现象。它描述的是“多个任务同时发生，需要被处理”这一现象。它的侧重点在于“发生”。
 
 > **其实是真正的异步，多核CPU可以同时开启多条线程供多个任务同时执行，互不干扰**
 > **只有多核CPU才存在并行,多个CPU独立开启线程调度**
 
-- 并发
+- 并发 concurrent 同时发生
+
+并行指的是一种技术，一个同时处理多个任务的技术。它描述了一种能够同时处理多个任务的能力，侧重点在于“运行”。
 
 > CPU时间片调度，同时只有一个线程在执行。
 > 但是可以多个线程异步执行，从外部看起来像是同时在执行，实际上是根据优先级不断抢占CPU的时间片执行代码。高优先级的抢占的时间多并且优先执行，所以上层看起来是同时执行但有优先级的概念。
 > 
 > **叠加并行即多处理器后更复杂，即并行同时并发,并发未必是并行的，因为可能在单CPU上并发**
-> 
+
+并发是一种现象，面对这一现象，我们首先创建多个线程，真正加快程序运行速度的，是并行技术。也就是让多个CPU同时工作。而多线程，是为了让多个CPU同时工作成为可能。
+
 > 并发队列
 
   - `dispatch_get_global_queue ` 全局的并发队列
@@ -261,6 +307,11 @@ typedef struct category_t {
 > 异步函数
 　　（1）并发队列：能开启N条线程
 　　（2）串行队列：开启1条线程
+　　
+　　
+　　同步方法不一定在本线程，异步方法方法也不一定新开线程（考虑主队列）。
+　　
+　　
 
 ###4. dispatch_group
 把一组任务提交到队列中，这些队列可以不相关，然后监听这组任务完成的事件。
@@ -366,6 +417,10 @@ dispatch_async(queue, ^{
 - 1.将NSOperation添加到NSOperationQueue，使其异步执行 === GCD并行异步队列。
 - 2.NSOperationQueue可以设置依赖关系 ~= GCD Group notify / GCD Group Wait / GCD Barrier。
 - 3.可以设置最大并发数量（同时执行的线程数） === GCD 信号量
+- 4.NSOperationQueue可以优先级
+- 5.NSOperationQueue可以使用KVO来监听任务完成状态
+- 6.可以取消线程任务
+- 7.NSOperation可以子类化，是一个类，GCD是C函数。
 
  
 ###6. NSThread
@@ -614,3 +669,193 @@ DELETE请求一般返回3种码
 ###3. ARC下的循环引用,block循环引用
 
 #runloop是什么？
+
+> ###RunLoop是一个对象，这个对象在循环中用来处理程序运行过程中出现的各种事件（比如说触摸事件、UI刷新事件、定时器事件、Selector事件），从而保持程序的持续运行；而且在没有事件处理的时候，会进入睡眠模式，从而节省CPU资源，提高程序性能。
+> 
+- 这种模型通常被称作 Event Loop。 Event Loop 在很多系统和框架里都有实现，比如 Node.js 的事件处理，比如 Windows 程序的消息循环，再比如 OSX/iOS 里的 RunLoop。实现这种模型的关键点在于：如何管理事件/消息，如何让线程在没有处理消息时休眠以避免资源占用、在有消息到来时立刻被唤醒。
+- RunLoop管理了其需要处理的事件和消息，并提供了一个入口函数来执行上面 Event Loop 的逻辑。线程执行了这个函数后，就会一直处于这个函数内部 "接受消息->等待->处理" 的循环中，直到这个循环结束（比如传入 quit 的消息），函数返回。
+
+
+#专场动画
+
+#响应者链条
+
+在iOS中凡是继承自UIResponder的对象都能够接收并处理事件。
+UIResponder一般分为三种事件，触摸事件，加速计事件以及远程控制事件。
+
+#Filie's Owner
+
+#CoreData SQLite比较
+
+#数据库升级怎么做?
+
+#多线程下载一个大文件怎么做? 2GB的文件
+- 多线程（线程池）
+  - 先完成的线程继续去下载文件
+  - 
+- 断点续传 Range ,code = 206
+- 分割文件(根据线程数分割）
+ - 多个小文件
+- 设计拼接数据结构
+- 数据校验完整性(md5 hash)
+
+#Storyboard还是纯代码布局？各有什么优缺点?
+- 多个Storyboard的引用 ，采用 Storyboard Reference
+- 
+
+#NSArray如果用Strong修饰有什么注意事项？
+
+#xib自定义View在storyboard中的使用
+- 1.拖一个UIView，class设为自定义View的类型
+- 2.重写- (void)awakeFromNib
+- 3.重写- (void)setFrame:(CGRect)frame (Autolayout)
+
+#TCP、UDP的区别
+
+#HTTP、RPC
+
+#引入第三方框架时选择 Embedded 是什么区别？
+- .dylib(.so)和.framework
+  动态链接库：链接时不复制，程序运行时由系统动态加载到内存，供程序调用，系统只加载一次，多个程序共用，节省内存。
+- .a 和 .framework
+  静态链接库：链接时完整地拷贝至可执行文件中，被多次使用就有多份冗余拷贝。
+- framework为什么既是静态库又是动态库
+  系统的.framework是动态库，我们自己建立的.framework是静态库。
+- a与.framework有什么区别
+
+> .a是一个纯二进制文件，.framework中除了有二进制文件之外还有资源文件。
+.a文件不能直接使用，至少要有.h文件配合，.framework文件可以直接使用。
+.a + .h + sourceFile = .framework。
+
+> ###建议用.framework.
+
+- 为什么要使用静态库
+
+> 方便共享代码，便于合理使用。
+> 实现iOS程序的模块化。可以把固定的业务模块化成静态库.
+> 和别人分享你的代码库，但不想让别人看到你代码的实现。
+> 开发第三方sdk的需要。
+
+ 
+- 制作静态库时的几点注意：
+  - 1 注意理解：无论是.a静态库还.framework静态库，我们需要的都是二进制文件+.h+其它资源文件的形式，不同的是，.a本身就是二进制文件，需要我们自己配上.h和其它文件才能使用，而.framework本身已经包含了.h和其它文件，可以直接使用。
+
+  - 2 图片资源的处理：两种静态库，一般都是把图片文件单独的放在一个.bundle文件中，一般.bundle的名字和.a或.framework的名字相同。.bundle文件很好弄，新建一个文件夹，把它改名为.bundle就可以了，右键，显示包内容可以向其中添加图片资源。
+
+  - 3 category是我们实际开发项目中经常用到的，把category打成静态库是没有问题的，但是在用这个静态库的工程中，调用category中的方法时会有找不到该方法的运行时错误（selector not recognized），解决办法是：在使用静态库的工程中配置other linker flags的值为-ObjC。
+
+  - 4 如果一个静态库很复杂，需要暴露的.h比较多的话，就可以在静态库的内部创建一个.h文件（一般这个.h文件的名字和静态库的名字相同），然后把所有需要暴露出来的.h文件都集中放在这个.h文件中，而那些原本需要暴露的.h都不需要再暴露了，只需要把.h暴露出来就可以了。
+
+
+
+
+#如何定制自己的Framework
+
+
+#Objective-C异常处理机制
+
+> Objective-C中处理异常是依赖于NSException实现的，它是异常处理的基类，它是一个实体类，而并非一个抽象类，所以你可以直接使用它或者继承它扩展使用
+
+`@try/@catch(NSException *e)/@finally`
+> Objective-C是C语言的扩充，它的异常处理机制是通过C标准库提供两个特殊的函数setjmp()和longjmp()函数实现的。如果对C的异常处理机制和setjmp、longjmp函数不了解的，建议先阅读：C语言异常处理机制。
+
+```
+objc_exception_try_enter、objc_exception_extract、objc_exception_throw、objc_exception_try_exit
+```
+
+```
+             * _setjmp是C的函数，用于保存当前程序现场。
+             * _setjmp需要传入一个jmp_buf参数，保存当前需要用到的寄存器的值。
+             * _setjmp()它能返回两次，第一次是初始化时，返回0，第二次遇到_longjmp()函数调用会返回，返回值由_longjmp的第二个参数决定。
+             * 如果对_setjmp()和_longjmp()概念不太了解的，请参考C语言的异常处理机制。
+             *
+             * 下面_setjmp()初始化返回0，然后执行if{}中也就是@try{}中的代码。
+             
+```
+>
+>
+
+#iOS JSBridge的原理
+
+#JSPatch热更新原理
+
+JSPatch 能做到通过 JS 调用和改写 OC 方法最根本的原因是 Objective-C 是动态语言，OC 上所有方法的调用/类的生成都通过 Objective-C Runtime 在运行时进行，我们可以通过类名/方法名反射得到相应的类和方法：
+
+Class class = NSClassFromString("UIViewController");
+id viewController = [[class alloc] init];
+SEL selector = NSSelectorFromString("viewDidLoad");
+[viewController performSelector:selector];
+也可以替换某个类的方法为新的实现：
+
+static void newViewDidLoad(id slf, SEL sel) {}
+class_replaceMethod(class, selector, newViewDidLoad, @"");
+还可以新注册一个类，为类添加方法：
+
+Class cls = objc_allocateClassPair(superCls, "JPObject", 0);
+objc_registerClassPair(cls);
+class_addMethod(cls, selector, implement, typedesc);
+对于 Objective-C 对象模型和动态消息发送的原理已有很多文章阐述得很详细，这里就不详细阐述了。理论上你可以在运行时通过类名/方法名调用到任何 OC 方法，替换任何类的实现以及新增任意类。所以 JSPatch 的基本原理就是：JS 传递字符串给 OC，OC 通过 Runtime 接口调用和替换 OC 方法。
+
+#Core Data与SQLite比较
+
+
+|SQLite|Core Data|
+|:-:|:-:|
+|轻量级,占用内存和磁盘空间小|占用内存和磁盘空间大|
+||读取速度比SQLite块|
+|跨平台|iOS独有|
+|学习周期短,有SQL基础即可|学习周期长，要熟悉一套API|
+|需要重新封装对象|支持对象操作|
+|自定义升级过程|升级方便|
+|/|支持iCloud|
+|/|支持Undo,Redo|
+|第三方库:FMDB|第三方库:MagicalRecord|
+||面向对象编程|
+||KVC\KVO的支持|
+
+
+- CoreData的优点
+
+对象图管理
+惰性加载的支持（faulting and uniquing）
+面向对象的编程，直观易用
+良好的多线程支持(注意不是线程安全的)
+支持redo和undo
+NSFetchedResultController使得与tableview结合编程变得很容易
+KVC与KVO的支持
+ICould的支持
+Apple 推荐的存储方式，API在不断升级
+
+- CoreData的缺点
+
+ - 学习成本高，要很久才能得心应手
+ - 对象Schema改变后，数据迁移比较棘手（当然也支持）
+ - 对于一次大量更新删除等操作效率较低（因为每次都要先取到内存里）
+ - 对主键的支持要自己去维护（CoreData 通过objectID来唯一确定对象）
+ - 占用内存会高一些（为了维护ManagedContext，为了跟踪对象变化）
+
+- 使用SQLite的优点
+
+ - 学习成本相对较低
+ - 直接使用SQLite引擎，对一次大批量数据的操作性能较好（只需要一个SQL语句即可）。
+ - 占用内存较少
+ - 更加轻量
+ - Android和WP也支持
+
+- 使用SQLite的缺点
+ 
+ - 复杂的对象关系要自己维护
+ - 没有对象变化跟踪
+ - 并不是真正的面向对象编程
+
+#Weex 跨平台方案
+
+![](https://upload-images.jianshu.io/upload_images/201701-51b1eec568b4aecf.png?imageMogr2/auto-orient/strip%7CimageView2/2/w/700)
+
+#自定义Framework
+
+#组件化设计 
+
+- Protocol注册方案
+- URL 注册方案
+- Target-Action runtime调用方案+ Category

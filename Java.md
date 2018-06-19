@@ -1,19 +1,47 @@
 Java 复习笔记
 
 #线程和进程的关系？
+- 进程
+
+	> 进程是资源（CPU、内存等）分配的基本单位，它是程序执行时的一个实例。程序运行时系统就会创建一个进程，并为它分配资源，然后把该进程放入进程就绪队列，进程调度器选中它的时候就会为它分配CPU时间，程序开始真正运行。
+- 线程
+
+> 线程是程序执行时的最小单位，它是进程的一个执行流，是CPU调度和分派的基本单位，一个进程可以由很多个线程组成，线程间共享进程的所有资源，每个线程有自己的堆栈和局部变量。线程由CPU独立调度执行，在多CPU环境下就允许多个线程同时运行。同样多线程也可以实现并发操作，每个请求分配一个线程来处理。
+
+#线程和进程各自有什么区别和优劣呢？
+
+进程是资源分配的最小单位，线程是程序执行的最小单位。
+
+进程有自己的独立地址空间，每启动一个进程，系统就会为它分配地址空间，建立数据表来维护代码段、堆栈段和数据段，这种操作非常昂贵。而线程是共享进程中的数据的，使用相同的地址空间，因此CPU切换一个线程的花费远比进程要小很多，同时创建一个线程的开销也比进程要小很多。
+
+线程之间的通信更方便，同一进程下的线程共享全局变量、静态变量等数据，而进程之间的通信需要以通信的方式（IPC)进行。不过如何处理好同步与互斥是编写多线程程序的难点。
+
+但是多进程程序更健壮，多线程程序只要有一个线程死掉，整个进程也死掉了，而一个进程死掉并不会对另外一个进程造成影响，因为进程有自己独立的地址空间。
+
+> ###`fork` is expensive. Memory is copied from the parent to the child, all descriptors are duplicated in the child, and so on. Current implementations use a technique called `copy-on-write`, which avoids a copy of the parent’s data space to the child until the child needs its own copy. But, regardless of this optimization, fork is expensive.
+
+> ###`IPC` is required to pass information between the parent and child after the fork. Passing information from the parent to the child before the fork is easy, since the child starts with a copy of the parent’s data space and with a copy of all the parent’s descriptors. But, returning information from the child to the parent takes more work.
+
+> ###Threads help with both problems. Threads are sometimes called lightweight processes since a thread is “lighter weight” than a process. That is, thread creation can be 10–100 times faster than process creation.
+
+> ###All threads within a process share the same global memory. This makes the sharing of information easy between the threads, but along with this simplicity comes the problem
 
 #多线程
 ## 原子性、可见性、有序性
 ## 1.ThreadLocal
 	数据隔离
 ## 2.volatile
-## 3.CAS
+  - 禁止指令重排
+  - 内存可见
+  
+## 3.CAS(Compare and swap)
 ## synchronized
 	数据共享
 	
 #RxJava原理和优点？
-
-
+- 自动适应设备
+- 
+> 淘宝的网页没有采取响应式开发，因为数据太多，页面比较复杂，响应式开发工作量较大。重新做一个针对于移动端的页面工作量相对来说还小一些。
 
 #Java有几种引用？
 
